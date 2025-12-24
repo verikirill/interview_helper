@@ -347,7 +347,7 @@ textarea::placeholder {
   margin-top: 20px;
 }
 
-.btn-save, .btn-cancel {
+.btn-save, .btn-cancel, .btn-reset {
   flex: 1;
   padding: 10px;
   border: none;
@@ -373,6 +373,15 @@ textarea::placeholder {
 
 .btn-cancel:hover {
   background: var(--bg-hover);
+}
+
+.btn-reset {
+  background: var(--danger);
+  color: white;
+}
+
+.btn-reset:hover {
+  background: #dc2626;
 }
 
 /* Click-through indicator */

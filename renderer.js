@@ -32,7 +32,8 @@ const elements = {
   shortcutAsk: document.getElementById('shortcutAsk'),
   settingAlwaysOnTop: document.getElementById('settingAlwaysOnTop'),
   btnSaveSettings: document.getElementById('btnSaveSettings'),
-  btnCancelSettings: document.getElementById('btnCancelSettings')
+  btnCancelSettings: document.getElementById('btnCancelSettings'),
+  btnResetSettings: document.getElementById('btnResetSettings')
 };
 
 // Initialize
@@ -77,6 +78,11 @@ function setupEventListeners() {
   elements.btnSettings.addEventListener('click', toggleSettings);
   elements.btnSaveSettings.addEventListener('click', saveSettings);
   elements.btnCancelSettings.addEventListener('click', () => elements.settingsPanel.classList.remove('active'));
+  elements.btnResetSettings.addEventListener('click', async () => {
+    if (confirm('Сбросить все настройки? Приложение перезапустится.')) {
+      await window.electronAPI.resetSettings();
+    }
+  });
   elements.settingOpacity.addEventListener('input', async (e) => {
     const opacity = parseInt(e.target.value) / 100;
     elements.opacityValue.textContent = e.target.value + '%';

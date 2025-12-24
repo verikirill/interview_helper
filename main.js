@@ -164,6 +164,12 @@ ipcMain.handle('set-opacity', (event, value) => {
   store.set('opacity', value);
 });
 
+ipcMain.handle('reset-settings', () => {
+  store.clear();
+  app.relaunch();
+  app.exit(0);
+});
+
 ipcMain.handle('capture-screen', async () => {
   const { screen } = require('electron');
   const primaryDisplay = screen.getPrimaryDisplay();
