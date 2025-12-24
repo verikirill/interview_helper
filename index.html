@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interview Helper</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Title Bar -->
+    <div class="title-bar" id="titleBar">
+      <div class="controls-left">
+        <span class="app-title">Interview Helper</span>
+      </div>
+      
+      <div class="controls-center">
+        <button class="btn-action" id="btnScreenshot">
+          <span>Скриншот</span>
+          <span class="shortcut">Ctrl+Shift+S</span>
+        </button>
+      </div>
+      
+      <div class="controls-right">
+        <button class="btn-icon" id="btnSettings" title="Настройки">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="4" y1="6" x2="20" y2="6"/>
+            <line x1="4" y1="12" x2="20" y2="12"/>
+            <line x1="4" y1="18" x2="20" y2="18"/>
+          </svg>
+        </button>
+        <button class="btn-icon" id="btnClickThrough" title="Сквозной режим">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 8v8M8 12h8"/>
+          </svg>
+        </button>
+        <button class="btn-icon" id="btnMinimize" title="Свернуть">−</button>
+        <button class="btn-icon btn-close" id="btnClose" title="Закрыть">×</button>
+      </div>
+    </div>
+
+    <!-- Input Area -->
+    <div class="input-area">
+      <textarea id="inputText" placeholder="Введите запрос вручную..." rows="1"></textarea>
+      <button class="btn-submit" id="btnSubmit">Получить ответ</button>
+    </div>
+
+    <!-- Response Area -->
+    <div class="response-area" id="responseArea">
+      <div class="response-content" id="responseContent">
+        <p class="placeholder">Ответ появится здесь...</p>
+      </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="navigation">
+      <div class="nav-left">
+        <button class="btn-nav" id="btnPrev">←</button>
+      </div>
+      <div class="nav-center">
+        <span id="pageIndicator">1/1</span>
+      </div>
+      <div class="nav-right">
+        <button class="btn-nav" id="btnNext">→</button>
+      </div>
+    </div>
+
+    <!-- Hints Bar -->
+    <div class="hints-bar">
+      <span>Ctrl+Shift+H скрыть</span>
+      <span>Ctrl+Shift+T сквозной</span>
+      <span>Ctrl+Shift+↑↓ прозрачность</span>
+      <span>Ctrl++/- шрифт</span>
+      <span>Ctrl+Shift+PgUp/Dn скролл</span>
+    </div>
+
+    <!-- Settings Panel -->
+    <div class="settings-panel" id="settingsPanel">
+      <h3>Настройки</h3>
+      
+      <div class="settings-group">
+        <label>API Key (NVIDIA)</label>
+        <input type="password" id="settingApiKey" placeholder="nvapi-...">
+      </div>
+      
+      <div class="settings-group">
+        <label>API URL</label>
+        <input type="text" id="settingApiUrl">
+      </div>
+      
+      <h4>Модели</h4>
+      
+      <div class="settings-group">
+        <label>Vision (OCR)</label>
+        <select id="settingVisionModel">
+          <option value="meta/llama-4-maverick-17b-128e-instruct">Llama 4 Maverick (vision)</option>
+        </select>
+      </div>
+      
+      <div class="settings-group">
+        <label>Solver (решение)</label>
+        <select id="settingSolverModel">
+          <option value="qwen/qwen3-coder-480b-a35b-instruct">Qwen3 Coder 480B</option>
+          <option value="deepseek-ai/deepseek-r1">DeepSeek R1</option>
+        </select>
+      </div>
+      
+      <div class="settings-group">
+        <label>Размер шрифта: <span id="fontSizeValue">14px</span></label>
+        <input type="range" id="settingFontSize" min="6" max="24" value="14">
+      </div>
+      
+      <div class="settings-group">
+        <label>Прозрачность: <span id="opacityValue">90%</span></label>
+        <input type="range" id="settingOpacity" min="10" max="100" value="90">
+      </div>
+      
+      <h4>Горячие клавиши</h4>
+      
+      <div class="settings-group">
+        <label>Скрыть/Показать</label>
+        <input type="text" id="shortcutVisibility" class="shortcut-input">
+      </div>
+      
+      <div class="settings-group">
+        <label>Сквозной режим</label>
+        <input type="text" id="shortcutClickThrough" class="shortcut-input">
+      </div>
+      
+      <div class="settings-group">
+        <label>Скриншот</label>
+        <input type="text" id="shortcutScreenshot" class="shortcut-input">
+      </div>
+      
+      <div class="settings-group">
+        <label>Спросить</label>
+        <input type="text" id="shortcutAsk" class="shortcut-input">
+      </div>
+      
+      <div class="settings-group">
+        <label>
+          <input type="checkbox" id="settingAlwaysOnTop" checked>
+          Поверх всех окон
+        </label>
+      </div>
+      
+      <div class="settings-actions">
+        <button class="btn-save" id="btnSaveSettings">Сохранить</button>
+        <button class="btn-cancel" id="btnCancelSettings">Отмена</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>

@@ -1,0 +1,198 @@
+const { app, BrowserWindow, ipcMain, globalShortcut, screen, desktopCapturer, systemPreferences } = require('electron');
+const path = require('path');
+const Store = require('electron-store');
+
+const store = new Store({
+  defaults: {
+    apiKey: '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',
+    apiUrl: 'https://integrate.api.nvidia.com/v1/chat/completions',
+    visionModel: 'meta/llama-4-maverick-17b-128e-instruct',
+    solverModel: 'qwen/qwen3-coder-480b-a35b-instruct',
+    shortcuts: {
+      toggleVisibility: 'CommandOrControl+Shift+H',
+      toggleClickThrough: 'CommandOrControl+Shift+T',
+      takeScreenshot: 'CommandOrControl+Shift+S',
+      askQuestion: 'CommandOrControl+Enter',
+      increaseOpacity: 'CommandOrControl+Shift+Up',
+      decreaseOpacity: 'CommandOrControl+Shift+Down',
+      increaseFontSize: 'CommandOrControl+Plus',
+      decreaseFontSize: 'CommandOrControl+-',
+      scrollUp: 'CommandOrControl+Shift+PageUp',
+      scrollDown: 'CommandOrControl+Shift+PageDown'
+    },
+    opacity: 0.9,
+    fontSize: 14,
+    alwaysOnTop: true,
+    windowBounds: { width: 800, height: 600 }
+  }
+});
+
+let mainWindow;
+let isClickThrough = false;
+let isVisible = true;
+
+function createWindow() {
+  const { width, height } = store.get('windowBounds');
+  
+  mainWindow = new BrowserWindow({
+    width,
+    height,
+    transparent: true,
+    frame: false,
+    alwaysOnTop: store.get('alwaysOnTop'),
+    skipTaskbar: false,
+    resizable: true,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false
+    }
+  });
+
+  mainWindow.setOpacity(store.get('opacity'));
+  mainWindow.loadFile('index.html');
+
+  mainWindow.on('resize', () => {
+    const bounds = mainWindow.getBounds();
+    store.set('windowBounds', { width: bounds.width, height: bounds.height });
+  });
+
+  registerShortcuts();
+}
+
+function registerShortcuts() {
+  globalShortcut.unregisterAll();
+  const shortcuts = store.get('shortcuts');
+
+  // Toggle visibility
+  globalShortcut.register(shortcuts.toggleVisibility, () => {
+    isVisible = !isVisible;
+    if (isVisible) {
+      mainWindow.show();
+    } else {
+      mainWindow.hide();
+    }
+    mainWindow.webContents.send('visibility-changed', isVisible);
+  });
+
+  // Toggle click-through
+  globalShortcut.register(shortcuts.toggleClickThrough, () => {
+    isClickThrough = !isClickThrough;
+    mainWindow.setIgnoreMouseEvents(isClickThrough, { forward: true });
+    mainWindow.webContents.send('click-through-changed', isClickThrough);
+  });
+
+  // Screenshot
+  globalShortcut.register(shortcuts.takeScreenshot, async () => {
+    mainWindow.webContents.send('take-screenshot');
+  });
+
+  // Ask question
+  globalShortcut.register(shortcuts.askQuestion, () => {
+    mainWindow.webContents.send('ask-question');
+  });
+
+  // Opacity controls
+  globalShortcut.register(shortcuts.increaseOpacity, () => {
+    let opacity = Math.min(1, store.get('opacity') + 0.1);
+    store.set('opacity', opacity);
+    mainWindow.setOpacity(opacity);
+    mainWindow.webContents.send('opacity-changed', opacity);
+  });
+
+  globalShortcut.register(shortcuts.decreaseOpacity, () => {
+    let opacity = Math.max(0.1, store.get('opacity') - 0.1);
+    store.set('opacity', opacity);
+    mainWindow.setOpacity(opacity);
+    mainWindow.webContents.send('opacity-changed', opacity);
+  });
+
+  // Font size controls
+  globalShortcut.register(shortcuts.increaseFontSize, () => {
+    let fontSize = Math.min(24, (store.get('fontSize') || 14) + 2);
+    store.set('fontSize', fontSize);
+    mainWindow.webContents.send('font-size-changed', fontSize);
+  });
+
+  globalShortcut.register(shortcuts.decreaseFontSize, () => {
+    let fontSize = Math.max(6, (store.get('fontSize') || 14) - 2);
+    store.set('fontSize', fontSize);
+    mainWindow.webContents.send('font-size-changed', fontSize);
+  });
+
+  // Scroll controls
+  globalShortcut.register(shortcuts.scrollUp, () => {
+    mainWindow.webContents.send('scroll-up');
+  });
+
+  globalShortcut.register(shortcuts.scrollDown, () => {
+    mainWindow.webContents.send('scroll-down');
+  });
+}
+
+app.whenReady().then(createWindow);
+
+app.on('will-quit', () => {
+  globalShortcut.unregisterAll();
+});
+
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') app.quit();
+});
+
+// IPC Handlers
+ipcMain.handle('get-settings', () => store.store);
+
+ipcMain.handle('save-settings', (event, settings) => {
+  Object.keys(settings).forEach(key => store.set(key, settings[key]));
+  if (settings.shortcuts) registerShortcuts();
+  if (settings.opacity) mainWindow.setOpacity(settings.opacity);
+  if (settings.alwaysOnTop !== undefined) mainWindow.setAlwaysOnTop(settings.alwaysOnTop);
+  return true;
+});
+
+ipcMain.handle('minimize-window', () => mainWindow.minimize());
+ipcMain.handle('close-window', () => mainWindow.close());
+
+ipcMain.handle('set-click-through', (event, value) => {
+  isClickThrough = value;
+  mainWindow.setIgnoreMouseEvents(value, { forward: true });
+});
+
+ipcMain.handle('set-opacity', (event, value) => {
+  mainWindow.setOpacity(value);
+  store.set('opacity', value);
+});
+
+ipcMain.handle('capture-screen', async () => {
+  const { screen } = require('electron');
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const { width, height } = primaryDisplay.size;
+  const scaleFactor = primaryDisplay.scaleFactor || 1;
+  
+  const realWidth = Math.floor(width * scaleFactor);
+  const realHeight = Math.floor(height * scaleFactor);
+  
+  const wasVisible = mainWindow.isVisible();
+  if (wasVisible) mainWindow.hide();
+  
+  await new Promise(resolve => setTimeout(resolve, 100));
+  
+  try {
+    const sources = await desktopCapturer.getSources({
+      types: ['screen'],
+      thumbnailSize: { width: realWidth, height: realHeight }
+    });
+    
+    if (sources.length > 0) {
+      const screenshot = sources[0].thumbnail.toDataURL('image/png');
+      if (wasVisible) mainWindow.show();
+      return screenshot;
+    }
+  } catch (err) {
+    console.error('Screenshot error:', err);
+  }
+  
+  if (wasVisible) mainWindow.show();
+  return null;
+});
