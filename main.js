@@ -23,6 +23,7 @@ const store = new Store({
     opacity: 0.9,
     fontSize: 14,
     alwaysOnTop: true,
+    contentProtection: true,
     windowBounds: { width: 800, height: 600 }
   }
 });
@@ -50,6 +51,7 @@ function createWindow() {
   });
 
   mainWindow.setOpacity(store.get('opacity'));
+  mainWindow.setContentProtection(store.get('contentProtection'));
   mainWindow.loadFile('index.html');
 
   mainWindow.on('resize', () => {
@@ -148,6 +150,7 @@ ipcMain.handle('save-settings', (event, settings) => {
   if (settings.shortcuts) registerShortcuts();
   if (settings.opacity) mainWindow.setOpacity(settings.opacity);
   if (settings.alwaysOnTop !== undefined) mainWindow.setAlwaysOnTop(settings.alwaysOnTop);
+  if (settings.contentProtection !== undefined) mainWindow.setContentProtection(settings.contentProtection);
   return true;
 });
 

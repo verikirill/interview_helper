@@ -31,6 +31,7 @@ const elements = {
   shortcutScreenshot: document.getElementById('shortcutScreenshot'),
   shortcutAsk: document.getElementById('shortcutAsk'),
   settingAlwaysOnTop: document.getElementById('settingAlwaysOnTop'),
+  settingContentProtection: document.getElementById('settingContentProtection'),
   btnSaveSettings: document.getElementById('btnSaveSettings'),
   btnCancelSettings: document.getElementById('btnCancelSettings'),
   btnResetSettings: document.getElementById('btnResetSettings')
@@ -59,6 +60,7 @@ function updateSettingsUI() {
   elements.shortcutScreenshot.value = settings.shortcuts?.takeScreenshot || '';
   elements.shortcutAsk.value = settings.shortcuts?.askQuestion || '';
   elements.settingAlwaysOnTop.checked = settings.alwaysOnTop !== false;
+  elements.settingContentProtection.checked = settings.contentProtection !== false;
 }
 
 function applyFontSize(size) {
@@ -418,6 +420,7 @@ async function saveSettings() {
     opacity: parseInt(elements.settingOpacity.value) / 100,
     fontSize: parseInt(elements.settingFontSize.value),
     alwaysOnTop: elements.settingAlwaysOnTop.checked,
+    contentProtection: elements.settingContentProtection.checked,
     shortcuts: {
       toggleVisibility: elements.shortcutVisibility.value,
       toggleClickThrough: elements.shortcutClickThrough.value,
