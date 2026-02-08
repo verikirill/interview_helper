@@ -2,6 +2,9 @@
 let settings = {};
 let responses = [];
 let currentResponseIndex = 0;
+let telegramMessages = [];
+let currentTelegramIndex = 0;
+let currentTab = 'solver';
 
 // DOM Elements
 const elements = {
@@ -17,11 +20,17 @@ const elements = {
   pageIndicator: document.getElementById('pageIndicator'),
   btnPrev: document.getElementById('btnPrev'),
   btnNext: document.getElementById('btnNext'),
+  telegramArea: document.getElementById('telegramArea'),
+  telegramContent: document.getElementById('telegramContent'),
   settingsPanel: document.getElementById('settingsPanel'),
   settingApiKey: document.getElementById('settingApiKey'),
   settingApiUrl: document.getElementById('settingApiUrl'),
   settingVisionModel: document.getElementById('settingVisionModel'),
   settingSolverModel: document.getElementById('settingSolverModel'),
+  settingTelegramToken: document.getElementById('settingTelegramToken'),
+  settingTelegramChatId: document.getElementById('settingTelegramChatId'),
+  btnStartTelegram: document.getElementById('btnStartTelegram'),
+  btnStopTelegram: document.getElementById('btnStopTelegram'),
   settingOpacity: document.getElementById('settingOpacity'),
   settingFontSize: document.getElementById('settingFontSize'),
   opacityValue: document.getElementById('opacityValue'),
@@ -43,6 +52,7 @@ async function init() {
   updateSettingsUI();
   setupEventListeners();
   setupIPCListeners();
+  switchTab('solver');
 }
 
 function updateSettingsUI() {
@@ -50,6 +60,8 @@ function updateSettingsUI() {
   elements.settingApiUrl.value = settings.apiUrl || '';
   elements.settingVisionModel.value = settings.visionModel || 'meta/llama-4-maverick-17b-128e-instruct';
   elements.settingSolverModel.value = settings.solverModel || 'qwen/qwen3-coder-480b-a35b-instruct';
+  elements.settingTelegramToken.value = settings.telegramToken || '';
+  elements.settingTelegramChatId.value = settings.telegramChatId || '';
   elements.settingOpacity.value = (settings.opacity || 0.9) * 100;
   elements.opacityValue.textContent = Math.round((settings.opacity || 0.9) * 100) + '%';
   elements.settingFontSize.value = settings.fontSize || 14;
@@ -65,6 +77,7 @@ function updateSettingsUI() {
 
 function applyFontSize(size) {
   elements.responseContent.style.fontSize = size + 'px';
+  elements.telegramContent.style.fontSize = size + 'px';
 }
 
 function setupEventListeners() {
@@ -99,6 +112,18 @@ function setupEventListeners() {
   // Navigation
   elements.btnPrev.addEventListener('click', () => navigateResponse(-1));
   elements.btnNext.addEventListener('click', () => navigateResponse(1));
+  
+  // Tabs
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      const tabName = tab.dataset.tab;
+      switchTab(tabName);
+    });
+  });
+  
+  // Telegram
+  elements.btnStartTelegram.addEventListener('click', startTelegramBot);
+  elements.btnStopTelegram.addEventListener('click', stopTelegramBot);
   
   // Click-through toggle
   elements.btnClickThrough.addEventListener('click', toggleClickThrough);
@@ -140,15 +165,30 @@ function setupIPCListeners() {
   });
   
   window.electronAPI.onScrollUp(() => {
-    elements.responseArea.scrollBy({ top: -150, behavior: 'smooth' });
+    if (currentTab === 'solver') {
+      elements.responseArea.scrollBy({ top: -150, behavior: 'smooth' });
+    } else {
+      elements.telegramArea.scrollBy({ top: -150, behavior: 'smooth' });
+    }
   });
   
   window.electronAPI.onScrollDown(() => {
-    elements.responseArea.scrollBy({ top: 150, behavior: 'smooth' });
+    if (currentTab === 'solver') {
+      elements.responseArea.scrollBy({ top: 150, behavior: 'smooth' });
+    } else {
+      elements.telegramArea.scrollBy({ top: 150, behavior: 'smooth' });
+    }
   });
   
   window.electronAPI.onTakeScreenshot(() => takeScreenshot());
   window.electronAPI.onAskQuestion(() => askQuestion());
+  
+  window.electronAPI.onTelegramMessage((message) => {
+    telegramMessages.push(message);
+    if (currentTab === 'telegram') {
+      displayTelegramMessages();
+    }
+  });
 }
 
 // Screenshot
@@ -417,6 +457,8 @@ async function saveSettings() {
     apiUrl: elements.settingApiUrl.value,
     visionModel: elements.settingVisionModel.value,
     solverModel: elements.settingSolverModel.value,
+    telegramToken: elements.settingTelegramToken.value,
+    telegramChatId: elements.settingTelegramChatId.value,
     opacity: parseInt(elements.settingOpacity.value) / 100,
     fontSize: parseInt(elements.settingFontSize.value),
     alwaysOnTop: elements.settingAlwaysOnTop.checked,
@@ -443,6 +485,119 @@ function toggleClickThrough() {
   isClickThrough = !isClickThrough;
   window.electronAPI.setClickThrough(isClickThrough);
   elements.btnClickThrough.classList.toggle('active', isClickThrough);
+}
+
+// Tab switching
+function switchTab(tabName) {
+  currentTab = tabName;
+  
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.classList.toggle('active', tab.dataset.tab === tabName);
+  });
+  
+  document.querySelectorAll('.tab-content').forEach(content => {
+    content.classList.toggle('active', content.dataset.content === tabName);
+  });
+  
+  if (tabName === 'telegram') {
+    displayTelegramMessages();
+  }
+}
+
+// Telegram functions
+async function startTelegramBot() {
+  const token = elements.settingTelegramToken.value.trim();
+  const chatId = elements.settingTelegramChatId.value.trim();
+  
+  if (!token || !chatId) {
+    alert('Введите Bot Token и Chat ID');
+    return;
+  }
+  
+  try {
+    await window.electronAPI.startTelegram(token, chatId);
+    alert('Telegram бот запущен');
+    
+    const messages = await window.electronAPI.getTelegramMessages();
+    telegramMessages = messages || [];
+    displayTelegramMessages();
+  } catch (err) {
+    alert('Ошибка запуска бота: ' + err.message);
+  }
+}
+
+async function stopTelegramBot() {
+  try {
+    await window.electronAPI.stopTelegram();
+    alert('Telegram бот остановлен');
+  } catch (err) {
+    alert('Ошибка остановки бота: ' + err.message);
+  }
+}
+
+function displayTelegramMessages() {
+  if (telegramMessages.length === 0) {
+    elements.telegramContent.innerHTML = '<p class="placeholder">Сообщения из Telegram появятся здесь...</p>';
+    return;
+  }
+  
+  let html = '';
+  telegramMessages.forEach(msg => {
+    const date = new Date(msg.timestamp);
+    const timeStr = date.toLocaleTimeString('ru-RU');
+    html += `<div class="telegram-message">`;
+    html += `<div class="telegram-header">${msg.from} | ${timeStr}</div>`;
+    
+    // Если есть фото, показываем его
+    if (msg.photo) {
+      html += `<div class="telegram-photo"><img src="${msg.photo}" alt="Photo" /></div>`;
+    }
+    
+    // Если есть текст, форматируем его
+    if (msg.text) {
+      html += `<div class="telegram-text">${formatTelegramText(msg.text)}</div>`;
+    }
+    
+    html += `</div>`;
+  });
+  
+  elements.telegramContent.innerHTML = html;
+  elements.telegramArea.scrollTop = elements.telegramArea.scrollHeight;
+}
+
+function formatTelegramText(text) {
+  // Экранируем HTML
+  text = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  
+  // Форматируем код блоками
+  text = text.replace(/```(\w*)\n?([\s\S]*?)```/g, function(match, lang, code) {
+    return '<pre><code class="lang-' + (lang || 'text') + '">' + code.trim() + '</code></pre>';
+  });
+  
+  // Форматируем инлайн код
+  text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
+  
+  // Форматируем жирный текст
+  text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  text = text.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+  
+  // Форматируем списки
+  text = text.replace(/^- (.*$)/gm, '<li>$1</li>');
+  text = text.replace(/^\d+\. (.*$)/gm, '<li>$1</li>');
+  
+  // Заменяем переносы строк
+  text = text.replace(/\n\n+/g, '</p><p>');
+  text = text.replace(/\n/g, '<br>');
+  
+  return '<div class="md"><p>' + text + '</p></div>';
+}
+
+function navigateTelegram(direction) {
+  // Не используется больше, но оставляем для совместимости
+}
+
+function updateTelegramIndicator() {
+  // Не используется больше, но оставляем для совместимости
 }
 
 // Initialize app

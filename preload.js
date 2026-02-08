@@ -10,6 +10,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   setOpacity: (value) => ipcRenderer.invoke('set-opacity', value),
   captureScreen: () => ipcRenderer.invoke('capture-screen'),
   
+  startTelegram: (token, chatId) => ipcRenderer.invoke('start-telegram', token, chatId),
+  stopTelegram: () => ipcRenderer.invoke('stop-telegram'),
+  getTelegramMessages: () => ipcRenderer.invoke('get-telegram-messages'),
+  
   onVisibilityChanged: (callback) => ipcRenderer.on('visibility-changed', (_, value) => callback(value)),
   onClickThroughChanged: (callback) => ipcRenderer.on('click-through-changed', (_, value) => callback(value)),
   onOpacityChanged: (callback) => ipcRenderer.on('opacity-changed', (_, value) => callback(value)),
@@ -17,5 +21,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onScrollUp: (callback) => ipcRenderer.on('scroll-up', () => callback()),
   onScrollDown: (callback) => ipcRenderer.on('scroll-down', () => callback()),
   onTakeScreenshot: (callback) => ipcRenderer.on('take-screenshot', () => callback()),
-  onAskQuestion: (callback) => ipcRenderer.on('ask-question', () => callback())
+  onAskQuestion: (callback) => ipcRenderer.on('ask-question', () => callback()),
+  onTelegramMessage: (callback) => ipcRenderer.on('telegram-message', (_, message) => callback(message))
 });

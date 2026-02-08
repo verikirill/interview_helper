@@ -3,13 +3,14 @@
   "version": "1.0.0",
   "description": "Interview assistant with AI",
   "main": "main.js",
+  "author": "verikirill",
   "scripts": {
     "start": "electron .",
     "build": "electron-builder"
   },
   "dependencies": {
     "electron-store": "^8.1.0",
-    "node-global-key-listener": "^0.3.0"
+    "node-telegram-bot-api": "^0.66.0"
   },
   "devDependencies": {
     "electron": "^28.3.3",
@@ -19,7 +20,10 @@
     "appId": "com.interview.helper",
     "productName": "Interview Helper",
     "win": {
-      "target": "nsis"
+      "target": "portable"
+    },
+    "portable": {
+      "artifactName": "InterviewHelper.exe"
     }
   }
 }

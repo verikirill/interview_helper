@@ -1,6 +1,7 @@
 const { app, BrowserWindow, ipcMain, globalShortcut, screen, desktopCapturer, systemPreferences } = require('electron');
 const path = require('path');
 const Store = require('electron-store');
+const TelegramBotService = require('./telegram-bot');
 
 const store = new Store({
   defaults: {
@@ -8,6 +9,8 @@ const store = new Store({
     apiUrl: 'https://integrate.api.nvidia.com/v1/chat/completions',
     visionModel: 'meta/llama-4-maverick-17b-128e-instruct',
     solverModel: 'qwen/qwen3-coder-480b-a35b-instruct',
+    telegramToken: '',
+    telegramChatId: '',
     shortcuts: {
       toggleVisibility: 'CommandOrControl+Shift+H',
       toggleClickThrough: 'CommandOrControl+Shift+T',
@@ -31,6 +34,7 @@ const store = new Store({
 let mainWindow;
 let isClickThrough = false;
 let isVisible = true;
+let telegramBot = new TelegramBotService();
 
 function createWindow() {
   const { width, height } = store.get('windowBounds');
@@ -204,4 +208,29 @@ ipcMain.handle('capture-screen', async () => {
   
   if (wasVisible) mainWindow.show();
   return null;
+});
+
+// Telegram IPC handlers
+ipcMain.handle('start-telegram', async (event, token, chatId) => {
+  try {
+    telegramBot.start(token, chatId);
+    
+    telegramBot.onMessage((message) => {
+      mainWindow.webContents.send('telegram-message', message);
+    });
+    
+    return { success: true };
+  } catch (err) {
+    console.error('Telegram start error:', err);
+    throw err;
+  }
+});
+
+ipcMain.handle('stop-telegram', () => {
+  telegramBot.stop();
+  return { success: true };
+});
+
+ipcMain.handle('get-telegram-messages', () => {
+  return telegramBot.getMessages();
 });
