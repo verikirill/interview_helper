@@ -130,69 +130,89 @@ function registerShortcuts() {
   const shortcuts = store.get('shortcuts');
 
   // Toggle visibility
-  globalShortcut.register(shortcuts.toggleVisibility, () => {
-    isVisible = !isVisible;
-    if (isVisible) {
-      mainWindow.show();
-    } else {
-      mainWindow.hide();
-    }
-    mainWindow.webContents.send('visibility-changed', isVisible);
-  });
+  if (shortcuts.toggleVisibility) {
+    globalShortcut.register(shortcuts.toggleVisibility, () => {
+      isVisible = !isVisible;
+      if (isVisible) {
+        mainWindow.show();
+      } else {
+        mainWindow.hide();
+      }
+      mainWindow.webContents.send('visibility-changed', isVisible);
+    });
+  }
 
   // Toggle click-through
-  globalShortcut.register(shortcuts.toggleClickThrough, () => {
-    isClickThrough = !isClickThrough;
-    mainWindow.setIgnoreMouseEvents(isClickThrough, { forward: true });
-    mainWindow.webContents.send('click-through-changed', isClickThrough);
-  });
+  if (shortcuts.toggleClickThrough) {
+    globalShortcut.register(shortcuts.toggleClickThrough, () => {
+      isClickThrough = !isClickThrough;
+      mainWindow.setIgnoreMouseEvents(isClickThrough, { forward: true });
+      mainWindow.webContents.send('click-through-changed', isClickThrough);
+    });
+  }
 
   // Screenshot
-  globalShortcut.register(shortcuts.takeScreenshot, async () => {
-    mainWindow.webContents.send('take-screenshot');
-  });
+  if (shortcuts.takeScreenshot) {
+    globalShortcut.register(shortcuts.takeScreenshot, async () => {
+      mainWindow.webContents.send('take-screenshot');
+    });
+  }
 
   // Ask question
-  globalShortcut.register(shortcuts.askQuestion, () => {
-    mainWindow.webContents.send('ask-question');
-  });
+  if (shortcuts.askQuestion) {
+    globalShortcut.register(shortcuts.askQuestion, () => {
+      mainWindow.webContents.send('ask-question');
+    });
+  }
 
   // Opacity controls
-  globalShortcut.register(shortcuts.increaseOpacity, () => {
-    let opacity = Math.min(1, store.get('opacity') + 0.1);
-    store.set('opacity', opacity);
-    mainWindow.setOpacity(opacity);
-    mainWindow.webContents.send('opacity-changed', opacity);
-  });
+  if (shortcuts.increaseOpacity) {
+    globalShortcut.register(shortcuts.increaseOpacity, () => {
+      let opacity = Math.min(1, store.get('opacity') + 0.1);
+      store.set('opacity', opacity);
+      mainWindow.setOpacity(opacity);
+      mainWindow.webContents.send('opacity-changed', opacity);
+    });
+  }
 
-  globalShortcut.register(shortcuts.decreaseOpacity, () => {
-    let opacity = Math.max(0.1, store.get('opacity') - 0.1);
-    store.set('opacity', opacity);
-    mainWindow.setOpacity(opacity);
-    mainWindow.webContents.send('opacity-changed', opacity);
-  });
+  if (shortcuts.decreaseOpacity) {
+    globalShortcut.register(shortcuts.decreaseOpacity, () => {
+      let opacity = Math.max(0.1, store.get('opacity') - 0.1);
+      store.set('opacity', opacity);
+      mainWindow.setOpacity(opacity);
+      mainWindow.webContents.send('opacity-changed', opacity);
+    });
+  }
 
   // Font size controls
-  globalShortcut.register(shortcuts.increaseFontSize, () => {
-    let fontSize = Math.min(24, (store.get('fontSize') || 14) + 2);
-    store.set('fontSize', fontSize);
-    mainWindow.webContents.send('font-size-changed', fontSize);
-  });
+  if (shortcuts.increaseFontSize) {
+    globalShortcut.register(shortcuts.increaseFontSize, () => {
+      let fontSize = Math.min(24, (store.get('fontSize') || 14) + 2);
+      store.set('fontSize', fontSize);
+      mainWindow.webContents.send('font-size-changed', fontSize);
+    });
+  }
 
-  globalShortcut.register(shortcuts.decreaseFontSize, () => {
-    let fontSize = Math.max(6, (store.get('fontSize') || 14) - 2);
-    store.set('fontSize', fontSize);
-    mainWindow.webContents.send('font-size-changed', fontSize);
-  });
+  if (shortcuts.decreaseFontSize) {
+    globalShortcut.register(shortcuts.decreaseFontSize, () => {
+      let fontSize = Math.max(6, (store.get('fontSize') || 14) - 2);
+      store.set('fontSize', fontSize);
+      mainWindow.webContents.send('font-size-changed', fontSize);
+    });
+  }
 
   // Scroll controls
-  globalShortcut.register(shortcuts.scrollUp, () => {
-    mainWindow.webContents.send('scroll-up');
-  });
+  if (shortcuts.scrollUp) {
+    globalShortcut.register(shortcuts.scrollUp, () => {
+      mainWindow.webContents.send('scroll-up');
+    });
+  }
 
-  globalShortcut.register(shortcuts.scrollDown, () => {
-    mainWindow.webContents.send('scroll-down');
-  });
+  if (shortcuts.scrollDown) {
+    globalShortcut.register(shortcuts.scrollDown, () => {
+      mainWindow.webContents.send('scroll-down');
+    });
+  }
 }
 
 app.whenReady().then(createWindow);
