@@ -9,12 +9,25 @@ class TelegramBotService {
     this.onMessageCallback = null;
   }
 
-  start(token, chatId) {
+  start(token, chatId, options = {}) {
     if (this.bot) {
       this.bot.stopPolling();
     }
 
-    this.bot = new TelegramBot(token, { polling: true });
+    const botOptions = { 
+      polling: true,
+      request: {}
+    };
+
+    if (options.proxy) {
+      botOptions.request.proxy = options.proxy;
+    }
+
+    if (options.baseUrl) {
+      botOptions.baseApiUrl = options.baseUrl;
+    }
+
+    this.bot = new TelegramBot(token, botOptions);
     this.store.set('telegramToken', token);
     this.store.set('telegramChatId', chatId);
 

@@ -11,6 +11,8 @@ const store = new Store({
     solverModel: 'qwen/qwen3-coder-480b-a35b-instruct',
     telegramToken: '',
     telegramChatId: '',
+    telegramProxy: '',
+    telegramBaseUrl: 'https://api.telegram.org',
     shortcuts: {
       toggleVisibility: 'CommandOrControl+Shift+H',
       toggleClickThrough: 'CommandOrControl+Shift+T',
@@ -213,7 +215,9 @@ ipcMain.handle('capture-screen', async () => {
 // Telegram IPC handlers
 ipcMain.handle('start-telegram', async (event, token, chatId) => {
   try {
-    telegramBot.start(token, chatId);
+    const proxy = store.get('telegramProxy');
+    const baseUrl = store.get('telegramBaseUrl');
+    telegramBot.start(token, chatId, { proxy, baseUrl });
     
     telegramBot.onMessage((message) => {
       mainWindow.webContents.send('telegram-message', message);

@@ -1,4 +1,4 @@
-﻿// State
+// State
 let settings = {};
 let responses = [];
 let currentResponseIndex = 0;
@@ -29,6 +29,8 @@ const elements = {
   settingSolverModel: document.getElementById('settingSolverModel'),
   settingTelegramToken: document.getElementById('settingTelegramToken'),
   settingTelegramChatId: document.getElementById('settingTelegramChatId'),
+  settingTelegramProxy: document.getElementById('settingTelegramProxy'),
+  settingTelegramBaseUrl: document.getElementById('settingTelegramBaseUrl'),
   btnStartTelegram: document.getElementById('btnStartTelegram'),
   btnStopTelegram: document.getElementById('btnStopTelegram'),
   settingOpacity: document.getElementById('settingOpacity'),
@@ -62,6 +64,8 @@ function updateSettingsUI() {
   elements.settingSolverModel.value = settings.solverModel || 'qwen/qwen3-coder-480b-a35b-instruct';
   elements.settingTelegramToken.value = settings.telegramToken || '';
   elements.settingTelegramChatId.value = settings.telegramChatId || '';
+  elements.settingTelegramProxy.value = settings.telegramProxy || '';
+  elements.settingTelegramBaseUrl.value = settings.telegramBaseUrl || 'https://api.telegram.org';
   elements.settingOpacity.value = (settings.opacity || 0.9) * 100;
   elements.opacityValue.textContent = Math.round((settings.opacity || 0.9) * 100) + '%';
   elements.settingFontSize.value = settings.fontSize || 14;
@@ -459,6 +463,8 @@ async function saveSettings() {
     solverModel: elements.settingSolverModel.value,
     telegramToken: elements.settingTelegramToken.value,
     telegramChatId: elements.settingTelegramChatId.value,
+    telegramProxy: elements.settingTelegramProxy.value,
+    telegramBaseUrl: elements.settingTelegramBaseUrl.value,
     opacity: parseInt(elements.settingOpacity.value) / 100,
     fontSize: parseInt(elements.settingFontSize.value),
     alwaysOnTop: elements.settingAlwaysOnTop.checked,
