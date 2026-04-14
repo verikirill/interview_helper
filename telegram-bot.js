@@ -18,11 +18,23 @@ class TelegramBotService {
     this.store.set('telegramToken', token);
     this.store.set('telegramChatId', chatId);
 
+    // Проверяем подключение
+    this.bot.getMe().then((me) => {
+      console.log(`✅ Telegram bot connected: @${me.username} (${me.first_name})`);
+    }).catch((err) => {
+      console.error('❌ Telegram connection error:', err.message);
+    });
+
+
     this.bot.on('message', async (msg) => {
+      console.log(`📩 Incoming message from chat ${msg.chat.id}: "${msg.text || '[no text]'}"`);
+
       // Фильтруем только сообщения из нужного чата
       if (chatId && msg.chat.id.toString() !== chatId.toString()) {
+        console.log(`⚠️ Message filtered out (Target Chat ID: ${chatId})`);
         return;
       }
+
 
       const message = {
         id: msg.message_id,
