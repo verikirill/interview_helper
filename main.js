@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, globalShortcut, screen, desktopCapturer, systemPreferences } = require('electron');
+const { app, BrowserWindow, ipcMain, globalShortcut, screen, desktopCapturer, systemPreferences, Tray, Menu, nativeImage } = require('electron');
 const path = require('path');
 const Store = require('electron-store');
 const TelegramBotService = require('./telegram-bot');
@@ -36,6 +36,7 @@ const store = new Store({
 });
 
 let mainWindow;
+let tray = null;
 let isClickThrough = false;
 let isVisible = true;
 let telegramBot = new TelegramBotService();
@@ -50,7 +51,7 @@ function createWindow() {
     transparent: true,
     frame: false,
     alwaysOnTop: store.get('alwaysOnTop'),
-    skipTaskbar: false,
+    skipTaskbar: true, // Hides from taskbar
     resizable: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -68,7 +69,60 @@ function createWindow() {
     store.set('windowBounds', { width: bounds.width, height: bounds.height });
   });
 
+  createTray();
   registerShortcuts();
+}
+
+function createTray() {
+  if (tray) return;
+
+  // Create a minimal programmatic icon (a simple blue square) if no actual icon exists wrapper
+  const iconBase64 = 'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAADFJREFUOE9jZKAQMFKon2HUAAaD0dDQ0MAwQGhoqP///3+GUQMYDDAajIhgNGBQMDAAF40BAThFp6MAAAAASUVORK5CYII=';
+  const icon = nativeImage.createFromDataURL(`data:image/png;base64,${iconBase64}`);
+  
+  tray = new Tray(icon);
+  
+  const contextMenu = Menu.buildFromTemplate([
+    { label: 'Interview Helper', enabled: false },
+    { type: 'separator' },
+    { label: 'Показать / Скрыть', click: () => {
+        isVisible = !isVisible;
+        if (isVisible) {
+          mainWindow.show();
+        } else {
+          mainWindow.hide();
+        }
+        mainWindow.webContents.send('visibility-changed', isVisible);
+    }},
+    { label: 'Настройки', click: () => {
+        if (!isVisible) {
+          isVisible = true;
+          mainWindow.show();
+          mainWindow.webContents.send('visibility-changed', isVisible);
+        }
+        // focus the window
+        if (mainWindow.isMinimized()) mainWindow.restore();
+        mainWindow.focus();
+    }},
+    { type: 'separator' },
+    { label: 'Выход', click: () => {
+        app.isQuitting = true;
+        app.quit();
+    }}
+  ]);
+
+  tray.setToolTip('Interview Helper');
+  tray.setContextMenu(contextMenu);
+
+  tray.on('click', () => {
+    isVisible = !isVisible;
+    if (isVisible) {
+      mainWindow.show();
+    } else {
+      mainWindow.hide();
+    }
+    mainWindow.webContents.send('visibility-changed', isVisible);
+  });
 }
 
 function registerShortcuts() {

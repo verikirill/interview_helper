@@ -49,6 +49,8 @@ const elements = {
   shortcutClickThrough: document.getElementById('shortcutClickThrough'),
   shortcutScreenshot: document.getElementById('shortcutScreenshot'),
   shortcutAsk: document.getElementById('shortcutAsk'),
+  shortcutScrollUp: document.getElementById('shortcutScrollUp'),
+  shortcutScrollDown: document.getElementById('shortcutScrollDown'),
   settingAlwaysOnTop: document.getElementById('settingAlwaysOnTop'),
   settingContentProtection: document.getElementById('settingContentProtection'),
   btnSaveSettings: document.getElementById('btnSaveSettings'),
@@ -84,6 +86,8 @@ function updateSettingsUI() {
   elements.shortcutClickThrough.value = settings.shortcuts?.toggleClickThrough || '';
   elements.shortcutScreenshot.value = settings.shortcuts?.takeScreenshot || '';
   elements.shortcutAsk.value = settings.shortcuts?.askQuestion || '';
+  elements.shortcutScrollUp.value = settings.shortcuts?.scrollUp || '';
+  elements.shortcutScrollDown.value = settings.shortcuts?.scrollDown || '';
   elements.settingAlwaysOnTop.checked = settings.alwaysOnTop !== false;
   elements.settingContentProtection.checked = settings.contentProtection !== false;
 }
@@ -497,6 +501,8 @@ async function saveSettings() {
       toggleClickThrough: elements.shortcutClickThrough.value,
       takeScreenshot: elements.shortcutScreenshot.value,
       askQuestion: elements.shortcutAsk.value,
+      scrollUp: elements.shortcutScrollUp.value,
+      scrollDown: elements.shortcutScrollDown.value,
       increaseOpacity: settings.shortcuts?.increaseOpacity || 'CommandOrControl+Shift+Up',
       decreaseOpacity: settings.shortcuts?.decreaseOpacity || 'CommandOrControl+Shift+Down'
     }
