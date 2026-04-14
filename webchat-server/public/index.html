@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Send Task - Interview Helper</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0f1115;
+      --bg-secondary: #1a1c23;
+      --text-active: #ffffff;
+      --text-muted: #94a3b8;
+      --accent: #6366f1;
+      --accent-glow: rgba(99, 102, 241, 0.5);
+      --accent-hover: #818cf8;
+      --border: rgba(255, 255, 255, 0.08);
+      --glass-bg: rgba(26, 28, 35, 0.7);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-primary);
+      color: var(--text-active);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      overflow-x: hidden;
+      background-image: 
+        radial-gradient(circle at 15% 50%, rgba(99, 102, 241, 0.15), transparent 25%),
+        radial-gradient(circle at 85% 30%, rgba(168, 85, 247, 0.15), transparent 25%);
+    }
+
+    /* Animated background blobs */
+    .blob {
+      position: absolute;
+      filter: blur(80px);
+      z-index: -1;
+      opacity: 0.6;
+      animation: float 10s ease-in-out infinite alternate;
+    }
+    .blob-1 { top: -10%; left: -10%; width: 500px; height: 500px; background: rgba(99, 102, 241, 0.3); }
+    .blob-2 { bottom: -10%; right: -10%; width: 600px; height: 600px; background: rgba(168, 85, 247, 0.2); animation-delay: -5s; }
+
+    @keyframes float {
+      0% { transform: translate(0, 0) scale(1); }
+      100% { transform: translate(30px, 30px) scale(1.1); }
+    }
+
+    .container {
+      width: 100%;
+      max-width: 800px;
+      margin-top: 50px;
+      padding: 0 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      z-index: 1;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.02em;
+    }
+
+    p.subtitle {
+      color: var(--text-muted);
+      font-size: 1.1rem;
+      margin-top: 8px;
+    }
+
+    .glass-panel {
+      background: var(--glass-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 30px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .glass-panel:hover {
+      box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.6);
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    label {
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    input[type="text"], textarea {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid var(--border);
+      color: var(--text-active);
+      padding: 16px;
+      border-radius: 12px;
+      font-family: 'Inter', sans-serif;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+      outline: none;
+    }
+
+    input[type="text"]:focus, textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+      background: rgba(0, 0, 0, 0.3);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 150px;
+      line-height: 1.5;
+    }
+
+    .hints {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      display: flex;
+      gap: 15px;
+    }
+
+    .hints span {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .hints kbd {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 0.8rem;
+    }
+
+    /* Image Preview */
+    .image-preview-container {
+      display: none;
+      position: relative;
+      width: fit-content;
+      margin-bottom: 20px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    .image-preview-container img {
+      display: block;
+      max-width: 100%;
+      max-height: 200px;
+      object-fit: contain;
+    }
+
+    .btn-remove-image {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      border: none;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      transition: background 0.2s;
+    }
+
+    .btn-remove-image:hover {
+      background: var(--danger, #ef4444);
+    }
+
+    .btn-submit {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, var(--accent) 0%, #4f46e5 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: all 0.3s ease;
+      box-shadow: 0 10px 20px -5px var(--accent-glow);
+    }
+
+    .btn-submit:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 15px 25px -5px var(--accent-glow);
+      filter: brightness(1.1);
+    }
+
+    .btn-submit:active {
+      transform: translateY(0);
+    }
+
+    /* Notification toaster */
+    #toast {
+      position: fixed;
+      bottom: -100px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #22c55e;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 30px;
+      font-weight: 500;
+      box-shadow: 0 10px 25px -5px rgba(34, 197, 94, 0.4);
+      transition: bottom 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    #toast.show {
+      bottom: 40px;
+    }
+
+    /* Recent messages preview */
+    .recent-messages {
+      margin-top: 20px;
+      width: 100%;
+    }
+    .msg-card {
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid var(--border);
+      padding: 15px;
+      border-radius: 12px;
+      margin-top: 10px;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      white-space: pre-wrap;
+      max-height: 100px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+  </style>
+</head>
+<body>
+  
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+
+  <div class="container">
+    <header>
+      <h1>Interview Relay</h1>
+      <p class="subtitle">Securely dispatch tasks to the Interview Helper app.</p>
+    </header>
+
+    <div class="glass-panel">
+      <div class="input-group">
+        <label for="senderName">Sender ID (Optional)</label>
+        <input type="text" id="senderName" placeholder="e.g. Interviewer, Task 1">
+      </div>
+
+      <div class="input-group">
+        <label for="messageText">Task Payload</label>
+        <textarea id="messageText" placeholder="Paste the algorithmic problem, text, or markdown here... Keep it formatted!"></textarea>
+      </div>
+
+      <div class="image-preview-container" id="imagePreviewContainer">
+        <img id="imagePreview" src="" alt="Attached Image">
+        <button class="btn-remove-image" id="btnRemoveImage" title="Remove image">×</button>
+      </div>
+
+      <div class="hints" style="margin-bottom: 24px;">
+        <span>Supports Markdown: <kbd>```python</kbd></span>
+        <span>Paste an image: <kbd>Ctrl+V</kbd></span>
+        <span>Send: <kbd>Ctrl+Enter</kbd></span>
+      </div>
+
+      <button class="btn-submit" id="btnSend">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"></line>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+        </svg>
+        Dispatch Payload
+      </button>
+    </div>
+
+    <!-- For visual feedback of what was sent recently -->
+    <div class="recent-messages" id="recentMessages" style="display: none;">
+      <label>Last dispatched payload</label>
+      <div class="msg-card" id="lastMsg"></div>
+    </div>
+  </div>
+
+  <div id="toast">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+      <polyline points="22 4 12 14.01 9 11.01"></polyline>
+    </svg>
+    Payload Dispatched Successfully
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    
+    const senderInput = document.getElementById('senderName');
+    const messageInput = document.getElementById('messageText');
+    const sendBtn = document.getElementById('btnSend');
+    const toast = document.getElementById('toast');
+    const recentDiv = document.getElementById('recentMessages');
+    const lastMsgCard = document.getElementById('lastMsg');
+    
+    // Image elements
+    const imagePreviewContainer = document.getElementById('imagePreviewContainer');
+    const imagePreview = document.getElementById('imagePreview');
+    const btnRemoveImage = document.getElementById('btnRemoveImage');
+    
+    let attachedImageData = null;
+
+    // Random silly name generator for fun if empty
+    const names = ["Ghost", "Maverick", "Shadow", "Spectre", "Phantom", "Oracle"];
+    senderInput.value = names[Math.floor(Math.random() * names.length)];
+
+    function sendMessage() {
+      const text = messageInput.value.trim();
+      if (!text && !attachedImageData) return;
+
+      const from = senderInput.value.trim() || 'Anonymous';
+
+      // Emit to server
+      socket.emit('sendMessage', { 
+        from, 
+        text,
+        photo: attachedImageData // will be null if no image attached
+      });
+
+      // Visual feedback
+      lastMsgCard.textContent = text || '[Image attached]';
+      recentDiv.style.display = 'block';
+      
+      messageInput.value = '';
+      removeImage(); // clear image after sending
+      
+      // Show toast
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3000);
+    }
+
+    function removeImage() {
+      attachedImageData = null;
+      imagePreview.src = '';
+      imagePreviewContainer.style.display = 'none';
+    }
+
+    sendBtn.addEventListener('click', sendMessage);
+    btnRemoveImage.addEventListener('click', removeImage);
+
+    // Handle Image Pasting
+    document.addEventListener('paste', (e) => {
+      const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+      for (let index in items) {
+        const item = items[index];
+        if (item.kind === 'file' && item.type.startsWith('image/')) {
+          const blob = item.getAsFile();
+          const reader = new FileReader();
+          
+          reader.onload = (event) => {
+            attachedImageData = event.target.result; // base64 string
+            imagePreview.src = attachedImageData;
+            imagePreviewContainer.style.display = 'block';
+          };
+          
+          reader.readAsDataURL(blob);
+        }
+      }
+    });
+
+    messageInput.addEventListener('keydown', (e) => {
+      // Ctrl+Enter or Cmd+Enter
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        sendMessage();
+      }
+    });
+
+  </script>
+</body>
+</html>

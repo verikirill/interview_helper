@@ -13,6 +13,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   startTelegram: (token, chatId) => ipcRenderer.invoke('start-telegram', token, chatId),
   stopTelegram: () => ipcRenderer.invoke('stop-telegram'),
   getTelegramMessages: () => ipcRenderer.invoke('get-telegram-messages'),
+
+  startWebchat: (url) => ipcRenderer.invoke('start-webchat', url),
+  stopWebchat: () => ipcRenderer.invoke('stop-webchat'),
+  getWebchatMessages: () => ipcRenderer.invoke('get-webchat-messages'),
   
   onVisibilityChanged: (callback) => ipcRenderer.on('visibility-changed', (_, value) => callback(value)),
   onClickThroughChanged: (callback) => ipcRenderer.on('click-through-changed', (_, value) => callback(value)),
@@ -22,5 +26,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onScrollDown: (callback) => ipcRenderer.on('scroll-down', () => callback()),
   onTakeScreenshot: (callback) => ipcRenderer.on('take-screenshot', () => callback()),
   onAskQuestion: (callback) => ipcRenderer.on('ask-question', () => callback()),
-  onTelegramMessage: (callback) => ipcRenderer.on('telegram-message', (_, message) => callback(message))
+  onTelegramMessage: (callback) => ipcRenderer.on('telegram-message', (_, message) => callback(message)),
+  onWebchatMessage: (callback) => ipcRenderer.on('webchat-message', (_, message) => callback(message))
 });

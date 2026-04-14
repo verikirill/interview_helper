@@ -3,6 +3,7 @@ let settings = {};
 let responses = [];
 let currentResponseIndex = 0;
 let telegramMessages = [];
+let webchatMessages = [];
 let currentTelegramIndex = 0;
 let currentTab = 'solver';
 
@@ -33,6 +34,13 @@ const elements = {
   settingTelegramBaseUrl: document.getElementById('settingTelegramBaseUrl'),
   btnStartTelegram: document.getElementById('btnStartTelegram'),
   btnStopTelegram: document.getElementById('btnStopTelegram'),
+  
+  webchatArea: document.getElementById('webchatArea'),
+  webchatContent: document.getElementById('webchatContent'),
+  settingWebchatServerUrl: document.getElementById('settingWebchatServerUrl'),
+  btnStartWebchat: document.getElementById('btnStartWebchat'),
+  btnStopWebchat: document.getElementById('btnStopWebchat'),
+
   settingOpacity: document.getElementById('settingOpacity'),
   settingFontSize: document.getElementById('settingFontSize'),
   opacityValue: document.getElementById('opacityValue'),
@@ -66,6 +74,7 @@ function updateSettingsUI() {
   elements.settingTelegramChatId.value = settings.telegramChatId || '';
   elements.settingTelegramProxy.value = settings.telegramProxy || '';
   elements.settingTelegramBaseUrl.value = settings.telegramBaseUrl || 'https://api.telegram.org';
+  elements.settingWebchatServerUrl.value = settings.webchatServerUrl || 'http://localhost:3000';
   elements.settingOpacity.value = (settings.opacity || 0.9) * 100;
   elements.opacityValue.textContent = Math.round((settings.opacity || 0.9) * 100) + '%';
   elements.settingFontSize.value = settings.fontSize || 14;
@@ -125,9 +134,11 @@ function setupEventListeners() {
     });
   });
   
-  // Telegram
+  // Telegram & Web Chat
   elements.btnStartTelegram.addEventListener('click', startTelegramBot);
   elements.btnStopTelegram.addEventListener('click', stopTelegramBot);
+  elements.btnStartWebchat.addEventListener('click', startWebchatClient);
+  elements.btnStopWebchat.addEventListener('click', stopWebchatClient);
   
   // Click-through toggle
   elements.btnClickThrough.addEventListener('click', toggleClickThrough);
@@ -171,16 +182,20 @@ function setupIPCListeners() {
   window.electronAPI.onScrollUp(() => {
     if (currentTab === 'solver') {
       elements.responseArea.scrollBy({ top: -150, behavior: 'smooth' });
-    } else {
+    } else if (currentTab === 'telegram') {
       elements.telegramArea.scrollBy({ top: -150, behavior: 'smooth' });
+    } else if (currentTab === 'webchat') {
+      elements.webchatArea.scrollBy({ top: -150, behavior: 'smooth' });
     }
   });
   
   window.electronAPI.onScrollDown(() => {
     if (currentTab === 'solver') {
       elements.responseArea.scrollBy({ top: 150, behavior: 'smooth' });
-    } else {
+    } else if (currentTab === 'telegram') {
       elements.telegramArea.scrollBy({ top: 150, behavior: 'smooth' });
+    } else if (currentTab === 'webchat') {
+      elements.webchatArea.scrollBy({ top: 150, behavior: 'smooth' });
     }
   });
   
@@ -191,6 +206,13 @@ function setupIPCListeners() {
     telegramMessages.push(message);
     if (currentTab === 'telegram') {
       displayTelegramMessages();
+    }
+  });
+
+  window.electronAPI.onWebchatMessage((message) => {
+    webchatMessages.push(message);
+    if (currentTab === 'webchat') {
+      displayWebchatMessages();
     }
   });
 }
@@ -465,6 +487,7 @@ async function saveSettings() {
     telegramChatId: elements.settingTelegramChatId.value,
     telegramProxy: elements.settingTelegramProxy.value,
     telegramBaseUrl: elements.settingTelegramBaseUrl.value,
+    webchatServerUrl: elements.settingWebchatServerUrl.value,
     opacity: parseInt(elements.settingOpacity.value) / 100,
     fontSize: parseInt(elements.settingFontSize.value),
     alwaysOnTop: elements.settingAlwaysOnTop.checked,
@@ -507,6 +530,8 @@ function switchTab(tabName) {
   
   if (tabName === 'telegram') {
     displayTelegramMessages();
+  } else if (tabName === 'webchat') {
+    displayWebchatMessages();
   }
 }
 
@@ -541,25 +566,53 @@ async function stopTelegramBot() {
   }
 }
 
-function displayTelegramMessages() {
-  if (telegramMessages.length === 0) {
-    elements.telegramContent.innerHTML = '<p class="placeholder">Сообщения из Telegram появятся здесь...</p>';
+// Web Chat functions
+async function startWebchatClient() {
+  const url = elements.settingWebchatServerUrl.value.trim();
+  
+  if (!url) {
+    alert('Введите Server URL для Web Chat');
+    return;
+  }
+  
+  try {
+    await window.electronAPI.startWebchat(url);
+    alert('Web Chat подключен');
+    
+    const messages = await window.electronAPI.getWebchatMessages();
+    webchatMessages = messages || [];
+    displayWebchatMessages();
+  } catch (err) {
+    alert('Ошибка подключения к Web Chat: ' + err.message);
+  }
+}
+
+async function stopWebchatClient() {
+  try {
+    await window.electronAPI.stopWebchat();
+    alert('Web Chat отключен');
+  } catch (err) {
+    alert('Ошибка отключения Web Chat: ' + err.message);
+  }
+}
+
+function renderMessageList(messages, contentElement, emptyMessage) {
+  if (messages.length === 0) {
+    contentElement.innerHTML = `<p class="placeholder">${emptyMessage}</p>`;
     return;
   }
   
   let html = '';
-  telegramMessages.forEach(msg => {
+  messages.forEach(msg => {
     const date = new Date(msg.timestamp);
     const timeStr = date.toLocaleTimeString('ru-RU');
     html += `<div class="telegram-message">`;
     html += `<div class="telegram-header">${msg.from} | ${timeStr}</div>`;
     
-    // Если есть фото, показываем его
     if (msg.photo) {
       html += `<div class="telegram-photo"><img src="${msg.photo}" alt="Photo" /></div>`;
     }
     
-    // Если есть текст, форматируем его
     if (msg.text) {
       html += `<div class="telegram-text">${formatTelegramText(msg.text)}</div>`;
     }
@@ -567,8 +620,16 @@ function displayTelegramMessages() {
     html += `</div>`;
   });
   
-  elements.telegramContent.innerHTML = html;
-  elements.telegramArea.scrollTop = elements.telegramArea.scrollHeight;
+  contentElement.innerHTML = html;
+  contentElement.parentElement.scrollTop = contentElement.parentElement.scrollHeight;
+}
+
+function displayTelegramMessages() {
+  renderMessageList(telegramMessages, elements.telegramContent, 'Сообщения из Telegram появятся здесь...');
+}
+
+function displayWebchatMessages() {
+  renderMessageList(webchatMessages, elements.webchatContent, 'Сообщения из Web Chat появятся здесь...');
 }
 
 function formatTelegramText(text) {

@@ -18,6 +18,7 @@
         <div class="tabs">
           <button class="tab active" data-tab="solver">AI Solver</button>
           <button class="tab" data-tab="telegram">Telegram</button>
+          <button class="tab" data-tab="webchat">Web Chat</button>
         </div>
       </div>
       
@@ -83,6 +84,16 @@
       <div class="telegram-area" id="telegramArea">
         <div class="telegram-content" id="telegramContent">
           <p class="placeholder">Сообщения из Telegram появятся здесь...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Web Chat Tab Content -->
+    <div class="tab-content" data-content="webchat">
+      <!-- Web Chat Messages Area -->
+      <div class="telegram-area" id="webchatArea">
+        <div class="telegram-content" id="webchatContent">
+          <p class="placeholder">Сообщения из Web Chat появятся здесь...</p>
         </div>
       </div>
     </div>
@@ -153,6 +164,18 @@
         <button class="btn-telegram" id="btnStartTelegram">Запустить бота</button>
         <button class="btn-telegram-stop" id="btnStopTelegram">Остановить</button>
       </div>
+
+      <h4>Web Chat</h4>
+
+      <div class="settings-group">
+        <label>Server URL</label>
+        <input type="text" id="settingWebchatServerUrl" placeholder="http://localhost:3000">
+      </div>
+      
+      <div class="settings-group">
+        <button class="btn-telegram" id="btnStartWebchat">Подключить Web Chat</button>
+        <button class="btn-telegram-stop" id="btnStopWebchat">Отключить</button>
+      </div>      
       
       <div class="settings-group">
         <label>Размер шрифта: <span id="fontSizeValue">14px</span></label>

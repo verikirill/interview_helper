@@ -2,6 +2,7 @@ const { app, BrowserWindow, ipcMain, globalShortcut, screen, desktopCapturer, sy
 const path = require('path');
 const Store = require('electron-store');
 const TelegramBotService = require('./telegram-bot');
+const WebChatService = require('./webchat-client');
 
 const store = new Store({
   defaults: {
@@ -13,6 +14,7 @@ const store = new Store({
     telegramChatId: '',
     telegramProxy: '',
     telegramBaseUrl: 'https://api.telegram.org',
+    webchatServerUrl: 'http://localhost:3000',
     shortcuts: {
       toggleVisibility: 'CommandOrControl+Shift+H',
       toggleClickThrough: 'CommandOrControl+Shift+T',
@@ -37,6 +39,7 @@ let mainWindow;
 let isClickThrough = false;
 let isVisible = true;
 let telegramBot = new TelegramBotService();
+let webChatClient = new WebChatService();
 
 function createWindow() {
   const { width, height } = store.get('windowBounds');
@@ -237,4 +240,29 @@ ipcMain.handle('stop-telegram', () => {
 
 ipcMain.handle('get-telegram-messages', () => {
   return telegramBot.getMessages();
+});
+
+// Web Chat IPC handlers
+ipcMain.handle('start-webchat', async (event, url) => {
+  try {
+    webChatClient.start(url);
+    
+    webChatClient.onMessage((message) => {
+      mainWindow.webContents.send('webchat-message', message);
+    });
+    
+    return { success: true };
+  } catch (err) {
+    console.error('Web Chat start error:', err);
+    throw err;
+  }
+});
+
+ipcMain.handle('stop-webchat', () => {
+  webChatClient.stop();
+  return { success: true };
+});
+
+ipcMain.handle('get-webchat-messages', () => {
+  return webChatClient.getMessages();
 });
