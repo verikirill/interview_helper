@@ -95,6 +95,9 @@ function updateSettingsUI() {
 function applyFontSize(size) {
   elements.responseContent.style.fontSize = size + 'px';
   elements.telegramContent.style.fontSize = size + 'px';
+  if (elements.webchatContent) {
+    elements.webchatContent.style.fontSize = size + 'px';
+  }
 }
 
 function setupEventListeners() {
@@ -159,6 +162,68 @@ function setupEventListeners() {
   elements.inputText.addEventListener('input', () => {
     elements.inputText.style.height = 'auto';
     elements.inputText.style.height = Math.min(elements.inputText.scrollHeight, 100) + 'px';
+  });
+
+  // Hotkey recording mechanism for shortcut inputs
+  document.querySelectorAll('.shortcut-input').forEach(input => {
+    input.addEventListener('keydown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const key = e.key;
+      
+      // Allow clearing the shortcut
+      if (key === 'Backspace' || key === 'Delete') {
+        input.value = '';
+        return;
+      }
+      
+      // Ignore if it's only a modifier key pressed
+      if (['Control', 'Shift', 'Alt', 'Meta', 'OS'].includes(key)) {
+        return;
+      }
+      
+      const keys = [];
+      // Build modifier string for Electron
+      if (e.ctrlKey) keys.push('CommandOrControl');
+      if (e.metaKey) keys.push('Super');
+      if (e.altKey) keys.push('Alt');
+      if (e.shiftKey) keys.push('Shift');
+      
+      let keyName = key;
+      // Handle physical keys based on English layout to avoid issues with Russian layout
+      if (e.code.startsWith('Key')) {
+        keyName = e.code.replace('Key', '');
+      } else if (e.code.startsWith('Digit')) {
+        keyName = e.code.replace('Digit', '');
+      } else if (keyName === 'PageUp') {
+        keyName = 'PageUp';
+      } else if (keyName === 'PageDown') {
+        keyName = 'PageDown';
+      } else if (keyName === 'ArrowUp') {
+        keyName = 'Up';
+      } else if (keyName === 'ArrowDown') {
+        keyName = 'Down';
+      } else if (keyName === 'ArrowLeft') {
+        keyName = 'Left';
+      } else if (keyName === 'ArrowRight') {
+        keyName = 'Right';
+      } else if (keyName === ' ') {
+        keyName = 'Space';
+      } else if (keyName === '=' || keyName === '+') {
+        keyName = 'Plus';
+      } else if (keyName === '-') {
+        keyName = '-';
+      } else {
+        keyName = keyName.toUpperCase();
+      }
+      
+      if (!keys.includes(keyName)) {
+        keys.push(keyName);
+      }
+      
+      input.value = keys.join('+');
+    });
   });
 }
 

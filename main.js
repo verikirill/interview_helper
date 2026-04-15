@@ -24,8 +24,8 @@ const store = new Store({
       decreaseOpacity: 'CommandOrControl+Shift+Down',
       increaseFontSize: 'CommandOrControl+Plus',
       decreaseFontSize: 'CommandOrControl+-',
-      scrollUp: 'CommandOrControl+Shift+PageUp',
-      scrollDown: 'CommandOrControl+Shift+PageDown'
+      scrollUp: 'Super+PageUp',
+      scrollDown: 'Super+PageDown'
     },
     opacity: 0.9,
     fontSize: 14,
