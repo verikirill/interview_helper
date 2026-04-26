@@ -298,6 +298,7 @@ textarea::placeholder {
   padding: 10px;
   margin: 8px 0;
   overflow-x: auto;
+  white-space: pre;
 }
 
 .telegram-text pre code {
@@ -306,6 +307,8 @@ textarea::placeholder {
   line-height: 1.4;
   color: #e6e6e6;
   white-space: pre;
+  display: block;
+  tab-size: 4;
 }
 
 .telegram-text code {
@@ -626,6 +629,7 @@ textarea::placeholder {
   padding: 12px;
   margin: 8px 0;
   overflow-x: auto;
+  white-space: pre;
 }
 
 .md pre code {
@@ -636,6 +640,8 @@ textarea::placeholder {
   line-height: 1.5;
   color: #e6e6e6;
   white-space: pre;
+  display: block;
+  tab-size: 4;
 }
 
 .md code {

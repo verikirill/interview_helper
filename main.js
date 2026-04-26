@@ -13,6 +13,7 @@ const store = new Store({
     telegramToken: '',
     telegramChatId: '',
     telegramProxy: '',
+    telegramProxySecret: '',
     telegramBaseUrl: 'https://api.telegram.org',
     webchatServerUrl: 'http://localhost:3000',
     shortcuts: {
@@ -293,8 +294,20 @@ ipcMain.handle('capture-screen', async () => {
 ipcMain.handle('start-telegram', async (event, token, chatId) => {
   try {
     const proxy = store.get('telegramProxy');
+    const proxySecret = store.get('telegramProxySecret');
     const baseUrl = store.get('telegramBaseUrl');
-    telegramBot.start(token, chatId, { proxy, baseUrl });
+    const options = { baseUrl };
+    
+    if (proxy && proxy.trim()) {
+      options.proxy = proxy;
+      // Если есть секретный ключ MTProto, добавляем его
+      if (proxySecret && proxySecret.trim()) {
+        console.log('🔐 Using MTProto proxy with secret');
+        options.mtprotoSecret = proxySecret;
+      }
+    }
+    
+    telegramBot.start(token, chatId, options);
     
     telegramBot.onMessage((message) => {
       mainWindow.webContents.send('telegram-message', message);

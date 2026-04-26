@@ -15,12 +15,25 @@ class TelegramBotService {
     }
 
     const botOptions = { 
-      polling: true,
-      request: {}
+      polling: true
     };
 
+    // MTProto proxy support
     if (options.proxy) {
-      botOptions.request.proxy = options.proxy;
+      botOptions.request = { proxy: options.proxy };
+    }
+
+    // Альтернативный способ для MTProto - через baseApiUrl
+    if (options.mtprotoProxy) {
+      const { server, port, secret } = options.mtprotoProxy;
+      // Для MTProto прокси используем специальный формат
+      botOptions.request = {
+        proxy: `http://${server}:${port}`,
+        agentOptions: {
+          secureOptions: require('constants').SSL_OP_LEGACY_SERVER_CONNECT
+        }
+      };
+      console.log(`🔐 Using MTProto proxy: ${server}:${port}`);
     }
 
     if (options.baseUrl) {
@@ -52,6 +65,7 @@ class TelegramBotService {
       const message = {
         id: msg.message_id,
         text: msg.text || msg.caption || '',
+        entities: msg.entities || msg.caption_entities || [],
         from: msg.from.first_name || 'Unknown',
         date: new Date(msg.date * 1000),
         timestamp: msg.date * 1000,

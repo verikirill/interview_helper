@@ -31,6 +31,7 @@ const elements = {
   settingTelegramToken: document.getElementById('settingTelegramToken'),
   settingTelegramChatId: document.getElementById('settingTelegramChatId'),
   settingTelegramProxy: document.getElementById('settingTelegramProxy'),
+  settingTelegramProxySecret: document.getElementById('settingTelegramProxySecret'),
   settingTelegramBaseUrl: document.getElementById('settingTelegramBaseUrl'),
   btnStartTelegram: document.getElementById('btnStartTelegram'),
   btnStopTelegram: document.getElementById('btnStopTelegram'),
@@ -75,6 +76,7 @@ function updateSettingsUI() {
   elements.settingTelegramToken.value = settings.telegramToken || '';
   elements.settingTelegramChatId.value = settings.telegramChatId || '';
   elements.settingTelegramProxy.value = settings.telegramProxy || '';
+  elements.settingTelegramProxySecret.value = settings.telegramProxySecret || '';
   elements.settingTelegramBaseUrl.value = settings.telegramBaseUrl || 'https://api.telegram.org';
   elements.settingWebchatServerUrl.value = settings.webchatServerUrl || 'http://localhost:3000';
   elements.settingOpacity.value = (settings.opacity || 0.9) * 100;
@@ -555,6 +557,7 @@ async function saveSettings() {
     telegramToken: elements.settingTelegramToken.value,
     telegramChatId: elements.settingTelegramChatId.value,
     telegramProxy: elements.settingTelegramProxy.value,
+    telegramProxySecret: elements.settingTelegramProxySecret.value,
     telegramBaseUrl: elements.settingTelegramBaseUrl.value,
     webchatServerUrl: elements.settingWebchatServerUrl.value,
     opacity: parseInt(elements.settingOpacity.value) / 100,
@@ -685,7 +688,7 @@ function renderMessageList(messages, contentElement, emptyMessage) {
     }
     
     if (msg.text) {
-      html += `<div class="telegram-text">${formatTelegramText(msg.text)}</div>`;
+      html += `<div class="telegram-text">${formatTelegramText(msg.text, msg.entities)}</div>`;
     }
     
     html += `</div>`;
@@ -703,31 +706,85 @@ function displayWebchatMessages() {
   renderMessageList(webchatMessages, elements.webchatContent, 'Сообщения из Web Chat появятся здесь...');
 }
 
-function formatTelegramText(text) {
-  // Экранируем HTML
-  text = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+function formatTelegramText(text, entities = []) {
+  if (!entities || entities.length === 0) {
+    // Если нет entities, используем простое форматирование
+    text = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    text = text.replace(/\n/g, '<br>');
+    return '<div class="md"><p>' + text + '</p></div>';
+  }
   
-  // Форматируем код блоками
-  text = text.replace(/```(\w*)\n?([\s\S]*?)```/g, function(match, lang, code) {
-    return '<pre><code class="lang-' + (lang || 'text') + '">' + code.trim() + '</code></pre>';
+  // Сортируем entities по offset
+  const sortedEntities = [...entities].sort((a, b) => a.offset - b.offset);
+  
+  let result = '';
+  let lastOffset = 0;
+  
+  sortedEntities.forEach(entity => {
+    // Добавляем текст до entity
+    if (entity.offset > lastOffset) {
+      const beforeText = text.substring(lastOffset, entity.offset);
+      result += escapeHtml(beforeText);
+    }
+    
+    // Получаем текст entity
+    const entityText = text.substring(entity.offset, entity.offset + entity.length);
+    
+    // Форматируем в зависимости от типа
+    switch (entity.type) {
+      case 'pre':
+      case 'code':
+        // Для блоков кода сохраняем все пробелы и переносы
+        const escapedCode = escapeHtml(entityText);
+        if (entity.type === 'pre') {
+          const lang = entity.language || 'text';
+          result += '<pre><code class="lang-' + lang + '">' + escapedCode + '</code></pre>';
+        } else {
+          result += '<code>' + escapedCode + '</code>';
+        }
+        break;
+      case 'bold':
+        result += '<strong>' + escapeHtml(entityText) + '</strong>';
+        break;
+      case 'italic':
+        result += '<em>' + escapeHtml(entityText) + '</em>';
+        break;
+      case 'underline':
+        result += '<u>' + escapeHtml(entityText) + '</u>';
+        break;
+      case 'strikethrough':
+        result += '<s>' + escapeHtml(entityText) + '</s>';
+        break;
+      case 'url':
+      case 'text_link':
+        const url = entity.url || entityText;
+        result += '<a href="' + escapeHtml(url) + '" target="_blank">' + escapeHtml(entityText) + '</a>';
+        break;
+      default:
+        result += escapeHtml(entityText);
+    }
+    
+    lastOffset = entity.offset + entity.length;
   });
   
-  // Форматируем инлайн код
-  text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
+  // Добавляем оставшийся текст
+  if (lastOffset < text.length) {
+    result += escapeHtml(text.substring(lastOffset));
+  }
   
-  // Форматируем жирный текст
-  text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-  text = text.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+  // Заменяем переносы строк на <br> (кроме тех, что внутри <pre>)
+  result = result.replace(/\n(?![^<]*<\/pre>)/g, '<br>');
   
-  // Форматируем списки
-  text = text.replace(/^- (.*$)/gm, '<li>$1</li>');
-  text = text.replace(/^\d+\. (.*$)/gm, '<li>$1</li>');
-  
-  // Заменяем переносы строк
-  text = text.replace(/\n\n+/g, '</p><p>');
-  text = text.replace(/\n/g, '<br>');
-  
-  return '<div class="md"><p>' + text + '</p></div>';
+  return '<div class="md">' + result + '</div>';
+}
+
+function escapeHtml(text) {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
 
 function navigateTelegram(direction) {
